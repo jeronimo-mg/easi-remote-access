@@ -1,0 +1,13 @@
+# Standard
+.DS_Store
+*.log
+*.zip
+
+# Linux module
+linux/bin/
+linux/lib/
+linux/vnc.pass
+linux/*.log
+
+# Windows module
+windows/*.log
