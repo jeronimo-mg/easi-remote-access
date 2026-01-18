@@ -1,8 +1,21 @@
 $ErrorActionPreference = "Stop"
 
 $BaseDir = Get-Location
-$BinDir = Join-Path $BaseDir "bin"
-$LibDir = Join-Path $BaseDir "lib"
+
+# Try current dir first, then parent dir (for shared bin/lib)
+if (Test-Path (Join-Path $BaseDir "bin")) {
+    $Root = $BaseDir
+}
+elseif (Test-Path (Join-Path (Join-Path $BaseDir "..") "bin")) {
+    $Root = Join-Path $BaseDir ".."
+}
+else {
+    $Root = $BaseDir # Fallback, likely will fail but let setup_tools handle it or error later
+}
+
+$BinDir = Join-Path $Root "bin"
+$LibDir = Join-Path $Root "lib"
+
 $CloudflaredPath = Join-Path $BinDir "cloudflared.exe"
 $LogFile = Join-Path $BaseDir "tunnel.log"
 $NoVncWebDir = Join-Path $LibDir "noVNC"

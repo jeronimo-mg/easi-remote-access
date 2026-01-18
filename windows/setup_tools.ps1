@@ -1,8 +1,17 @@
 $ErrorActionPreference = "Stop"
 
 $BaseDir = Get-Location
-$BinDir = Join-Path $BaseDir "bin"
-$LibDir = Join-Path $BaseDir "lib"
+# Check if we are in 'windows' subdir, if so, use parent for bin/lib to share with linux/root
+if ((Split-Path $BaseDir -Leaf) -eq "windows") {
+    $RootDir = Join-Path $BaseDir ".."
+}
+else {
+    $RootDir = $BaseDir
+}
+
+$BinDir = Join-Path $RootDir "bin"
+$LibDir = Join-Path $RootDir "lib"
+
 
 # Create directories
 if (-not (Test-Path $BinDir)) { New-Item -ItemType Directory -Path $BinDir | Out-Null }
@@ -13,7 +22,8 @@ $CloudflaredPath = Join-Path $BinDir "cloudflared.exe"
 if (-not (Test-Path $CloudflaredPath)) {
     Write-Host "⬇️  Downloading cloudflared..." -ForegroundColor Cyan
     Invoke-WebRequest -Uri "https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-windows-amd64.exe" -OutFile $CloudflaredPath
-} else {
+}
+else {
     Write-Host "✅ cloudflared already exists." -ForegroundColor Green
 }
 
@@ -22,7 +32,8 @@ $NoVncDir = Join-Path $LibDir "noVNC"
 if (-not (Test-Path $NoVncDir)) {
     Write-Host "⬇️  Cloning noVNC..." -ForegroundColor Cyan
     git clone https://github.com/novnc/noVNC.git $NoVncDir
-} else {
+}
+else {
     Write-Host "✅ noVNC already exists." -ForegroundColor Green
 }
 
@@ -40,7 +51,8 @@ if (-not (Test-Path $WebsockifyDir)) {
     npm init -y | Out-Null
     npm install websockify
     Pop-Location
-} else {
+}
+else {
     Write-Host "✅ websockify (node module) already exists." -ForegroundColor Green
 }
 
