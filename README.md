@@ -1,48 +1,22 @@
-# 🚀 ClickTop-Linux (Web Desktop)
+# 🚀 ClickTop (Multi-OS Remote Desktop)
 
-**ClickTop-Linux** is a lightweight, zero-configuration script to make your Linux desktop accessible via a web browser from anywhere in the world.
+**ClickTop** is a suite of zero-configuration scripts to make your desktop accessible via a web browser from anywhere.
 
-It combines **x11vnc** (display capturing), **noVNC** (web client), and **Cloudflare Tunnel** (secure exposure) into a single automatic setup.
+## 📂 Modules
 
-## ✨ Features
+### 🐧 [ClickTop-Linux](./linux/)
 
-* **Zero Config**: No router port forwarding required.
-* **Browser-Based**: Access your desktop from Chrome, Firefox, Safari on any device (including mobile).
-* **Secure**: Uses encrypted Cloudflare Tunnels and VNC password protection.
-* **Portable**: Scripts handles dependency downloads locally (noVNC/Cloudflared).
+The original, lightweight remote desktop for Debian/Ubuntu/Mint systems.
 
-## 📦 Requirements
+* **Tech**: x11vnc, noVNC, Cloudflare Tunnel.
+* **Status**: ✅ Stable.
 
-* A Linux machine (Debian/Ubuntu/Mint recommended).
-* `sudo` access (for initial x11vnc installation only).
+### 🪟 [ClickTop-Windows](./windows/)
 
-## ⚡ Quick Start (Windows)
+Native PowerShell implementation for Windows 10/11.
 
-1. **Double-click** the `CLICK_TO_START.bat` file.
-2. Wait for the URL to appear in the terminal.
-3. Open the URL and enter your VNC password.
-
-*Note: Requires TightVNC Server installed and running on port 5900 with "Allow Loopback connections" enabled.*
-
-## ⚡ Quick Start (Linux)
-
-1. **Run the setup**:
-
-    ```console
-    bash setup_tools.sh
-    ```
-
-2. **Start**:
-
-    ```console
-    bash start.sh
-    ```
-
-## 🛠️ Tech Stack
-
-* [x11vnc](https://github.com/LibVNC/x11vnc)
-* [noVNC](https://github.com/novnc/noVNC)
-* [Cloudflare Tunnel](https://github.com/cloudflare/cloudflared)
+* **Tech**: TightVNC, websockify-python, Cloudflare Tunnel.
+* **Status**: ✅ Beta.
 
 ## 📄 License
 

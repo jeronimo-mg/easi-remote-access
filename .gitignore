@@ -1,16 +1,24 @@
-# Logs
-*.log
-*.log.*
-
-# Binaries / Dependencies
-bin/
-lib/
-node_modules/
-*.exe
-
-# OS
+# General
+.DS_Store
 Thumbs.db
 Desktop.ini
-
-# Environment
 .env
+*.log
+*.zip
+
+# Linux Module
+linux/bin/
+linux/lib/
+linux/vnc.pass
+linux/*.log
+
+# Windows Module
+windows/bin/
+windows/lib/
+windows/node_modules/
+windows/*.log
+windows/*.exe
+# Ignore locally downloaded windows binaries if at root (during transition)
+bin/
+lib/
+
