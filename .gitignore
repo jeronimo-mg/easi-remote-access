@@ -1,0 +1,16 @@
+# Logs
+*.log
+*.log.*
+
+# Binaries / Dependencies
+bin/
+lib/
+node_modules/
+*.exe
+
+# OS
+Thumbs.db
+Desktop.ini
+
+# Environment
+.env
