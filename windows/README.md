@@ -15,3 +15,30 @@ User-friendly remote desktop for Windows 11.
 * **Powershell** orchestration.
 * **noVNC** (via Websockify).
 * **Cloudflare Tunnel**.
+
+## 🔧 Troubleshooting
+
+### 1. Black Screen (Mouse moves but screen is dark)
+
+* **Cause**: TightVNC on Windows 10/11 often fails to capture the screen efficiently using standard methods.
+* **Solution**: Install the **DfMirage Mirror Driver**.
+    1. Download `dfmirage-setup-x.x.x.exe` (available on TightVNC site or archives).
+    2. Install it and **restart your computer**.
+    3. TightVNC will automatically use it to capture the screen.
+
+### 2. "Loopback connections are not enabled"
+
+* **Cause**: TightVNC defaults to blocking connections from localhost (which is how this tunnel works).
+* **Solution**:
+    1. Open **TightVNC Server** settings.
+    2. Go to **Access Control** tab.
+    3. Check **"Allow loopback connections"**.
+    4. Restart the service/server.
+
+### 3. "Another copy of TightVNC is already running"
+
+* **Cause**: A "zombie" process is stuck in the background.
+* **Solution**:
+  * Open Task Manager and kill `tvnserver.exe`.
+  * Or run in terminal: `taskkill /F /IM tvnserver.exe`
+  * Then start TightVNC again from the Start Menu.
