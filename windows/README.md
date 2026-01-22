@@ -24,8 +24,9 @@ User-friendly remote desktop for Windows 11.
 * **Solution**: Install the included **DfMirage Mirror Driver**.
     1. Go to the `drivers/` folder in this repository.
     2. Run `dfmirage-setup-2.0.301.exe`.
-    3. Install it and **restart your computer**.
+    3. Install it and **restart your computer** (Essential).
     4. TightVNC will automatically use it to capture the screen.
+  * **Note**: If the black screen returns later, **restart the computer**. Restarting the service alone is often not enough to clear the video driver state on Windows 11.
 
 ### 2. "Loopback connections are not enabled"
 
