@@ -21,12 +21,15 @@ User-friendly remote desktop for Windows 11.
 ### 1. Black Screen (Mouse moves but screen is dark)
 
 * **Cause**: TightVNC on Windows 10/11 often fails to capture the screen efficiently using standard methods.
-* **Solution**: Install the included **DfMirage Mirror Driver**.
-    1. Go to the `drivers/` folder in this repository.
-    2. Run `dfmirage-setup-2.0.301.exe`.
-    3. Install it and **restart your computer** (Essential).
-    4. TightVNC will automatically use it to capture the screen.
-  * **Note**: If the black screen returns later, **restart the computer**. Restarting the service alone is often not enough to clear the video driver state on Windows 11.
+* **Solution**:
+    1. Run `windows/fix_black_screen.ps1` to check driver health.
+    2. If it says "Degraded" and cannot fix it, **YOU MUST RESTART THE COMPUTER**.
+    3. If you haven't installed the driver yet:
+        * Go to `drivers/` folder.
+        * Run the installer.
+        * **Restart**.
+
+* **Note**: If the black screen returns later, **restart the computer**. Restarting the service alone is often not enough to clear the video driver state on Windows 11.
 
 ### 2. "Loopback connections are not enabled"
 
