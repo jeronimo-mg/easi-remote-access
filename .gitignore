@@ -22,3 +22,5 @@ windows/*.exe
 bin/
 lib/
 
+
+tunnel_token.txt

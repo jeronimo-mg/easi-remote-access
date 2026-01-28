@@ -62,21 +62,42 @@ Write-Host "Proxy OK on port 6080."
 
 Write-Host "Starting Tunnel..."
 if (Test-Path $LogFile) { Remove-Item $LogFile }
-$TunnelArgs = "tunnel --url http://127.0.0.1:6080 --logfile `"$LogFile`""
-$TunnelProcess = Start-Process -FilePath $CloudflaredPath -ArgumentList $TunnelArgs -PassThru -WindowStyle Hidden
 
-Write-Host "Waiting for URL..."
-$FoundUrl = $null
-for ($i = 1; $i -le 20; $i++) {
-    Start-Sleep -Seconds 2
-    if (Test-Path $LogFile) {
-        $LogContent = Get-Content $LogFile -Raw
-        if ($LogContent -match "https://[a-zA-Z0-9-]+\.trycloudflare\.com") {
-            $FoundUrl = $matches[0]
-            break
+$TokenFile = Join-Path $BaseDir "tunnel_token.txt"
+
+if (Test-Path $TokenFile) {
+    $Token = Get-Content $TokenFile -Raw
+    $Token = $Token.Trim()
+    Write-Host "Using Fixed Tunnel (Token found)" -ForegroundColor Cyan
+    # Run named tunnel with token
+    $TunnelArgs = "tunnel run --token $Token"
+    $TunnelProcess = Start-Process -FilePath $CloudflaredPath -ArgumentList $TunnelArgs -PassThru -WindowStyle Hidden
+    
+    # We don't need to grep the log for URL, because the user already knows it (they configured it in Cloudflare)
+    # But we set FoundUrl to a placeholder so the script continues
+    $FoundUrl = "Fixed DNS configured in Cloudflare" 
+}
+else {
+    Write-Host "Using Temporary Tunnel (Random URL)" -ForegroundColor Gray
+    $TunnelArgs = "tunnel --url http://127.0.0.1:6080 --logfile `"$LogFile`""
+    $TunnelProcess = Start-Process -FilePath $CloudflaredPath -ArgumentList $TunnelArgs -PassThru -WindowStyle Hidden
+}
+
+if (-not (Test-Path $TokenFile)) {
+    Write-Host "Waiting for URL..."
+    $FoundUrl = $null
+    for ($i = 1; $i -le 20; $i++) {
+        Start-Sleep -Seconds 2
+        if (Test-Path $LogFile) {
+            $LogContent = Get-Content $LogFile -Raw
+            if ($LogContent -match "https://[a-zA-Z0-9-]+\.trycloudflare\.com") {
+                $FoundUrl = $matches[0]
+                break
+            }
         }
     }
 }
+
 
 if ($FoundUrl) {
     Write-Host ""
