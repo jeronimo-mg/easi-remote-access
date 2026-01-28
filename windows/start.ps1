@@ -103,6 +103,14 @@ if ($FoundUrl) {
     Write-Host ""
     Write-Host "SUCCESS: $FoundUrl/vnc.html" -ForegroundColor Green
     Write-Host ""
+    
+    # Send Notification if configured
+    $NotifyScript = Join-Path $BaseDir "notify_url.ps1"
+    if (Test-Path $NotifyScript) {
+        Write-Host "Sending notification..."
+        Start-Process -FilePath "powershell" -ArgumentList "-ExecutionPolicy Bypass -File `"$NotifyScript`" -Url `"$FoundUrl`"" -WindowStyle Hidden
+    }
+
     Write-Host "Monitoring TCP connections on port 5900... (Press Ctrl+C to stop)"
     
     # Monitoring Loop
