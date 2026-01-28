@@ -36,18 +36,19 @@ if (-not $VncTest.TcpTestSucceeded) {
 }
 Write-Host "VNC OK."
 
+$WebsockifyLog = Join-Path $BaseDir "websockify.log"
+if (Test-Path $WebsockifyLog) { Remove-Item $WebsockifyLog }
+
 Write-Host "Starting Proxy..."
-# Use python -m websockify directly.
-# We are manually starting it and waiting a bit.
-$PythonArgs = "-m websockify --web `"$NoVncWebDir`" 6080 127.0.0.1:5900"
-$WebsockifyProcess = Start-Process -FilePath "python" -ArgumentList $PythonArgs -PassThru -WindowStyle Hidden
+# Start websockify with redirection to log file so we can monitor connections
+$PythonArgs = "/c python -m websockify --web `"$NoVncWebDir`" 6080 127.0.0.1:5900 > `"$WebsockifyLog`" 2>&1"
+$WebsockifyProcess = Start-Process -FilePath "cmd" -ArgumentList $PythonArgs -PassThru -WindowStyle Hidden
 Start-Sleep -Seconds 3
 
 # Verify Port 6080
 $ProxyTest = Test-NetConnection -ComputerName 127.0.0.1 -Port 6080 -WarningAction SilentlyContinue
 if (-not $ProxyTest.TcpTestSucceeded) {
-    Write-Error "Websockify failed to start on port 6080. It might be crashing or port is in use."
-    # Kill if exists
+    Write-Error "Websockify failed to start on port 6080. Check $WebsockifyLog."
     Stop-Process -Id $WebsockifyProcess.Id -ErrorAction SilentlyContinue
     exit 1
 }
@@ -75,8 +76,37 @@ if ($FoundUrl) {
     Write-Host ""
     Write-Host "SUCCESS: $FoundUrl/vnc.html" -ForegroundColor Green
     Write-Host ""
-    Write-Host "Press Enter to stop..."
-    Read-Host
+    Write-Host "Monitoring connections... (Press Ctrl+C to stop)"
+    
+    # Monitoring Loop
+    $CurrentLine = 0
+    try {
+        while ($true) {
+            Start-Sleep -Seconds 1
+            
+            if (Test-Path $WebsockifyLog) {
+                $Logs = Get-Content $WebsockifyLog -Tail 5
+                
+                # Check for new connection patterns from websockify output
+                # Pattern often: " 1: 127.0.0.1: Plain non-SSL (ws://) WebSocket connection"
+                foreach ($line in $Logs) {
+                    if ($line -match "WebSocket connection" -and $line -notmatch "closed") {
+                        # Trigger Guard if not already running
+                        $GuardProcess = Get-Process -Name "powershell" -ErrorAction SilentlyContinue | Where-Object { $_.CommandLine -like "*guard.ps1*" }
+                        if (-not $GuardProcess) {
+                            Write-Host "New client connected! Triggering Black Screen Guard..." -ForegroundColor Cyan
+                            Start-Process -FilePath "powershell" -ArgumentList "-ExecutionPolicy Bypass -File `"$BaseDir\guard.ps1`"" -WindowStyle Normal
+                            # Sleep to accept the connection fully
+                            Start-Sleep -Seconds 5
+                        }
+                    }
+                }
+            }
+        }
+    }
+    catch {
+        # Ctrl+C or forcing close
+    }
 }
 else {
     Write-Host "FAILED. Check log:"
@@ -86,3 +116,4 @@ else {
 Stop-Process -Id $WebsockifyProcess.Id -ErrorAction SilentlyContinue
 Stop-Process -Id $TunnelProcess.Id -ErrorAction SilentlyContinue
 Write-Host "Stopped"
+

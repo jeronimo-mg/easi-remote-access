@@ -6,10 +6,10 @@
 
 ### 🐧 [ClickTop-Linux](./linux/)
 
-The original, lightweight remote desktop for Debian/Ubuntu/Mint systems.
+Zero-config remote desktop for Linux.
 
-* **Tech**: x11vnc, noVNC, Cloudflare Tunnel.
-* **Status**: ✅ Stable.
+* **[Ubuntu/Debian (apt)](./linux/ubuntu-debian(apt)/)**: For apt-based systems.
+* **[Oracle Linux (dnf)](./linux/oracle-linux(dnf)/)**: For dnf/rpm-based systems (RHEL, Fedora, Oracle).
 
 ### 🪟 [ClickTop-Windows](./windows/)
 

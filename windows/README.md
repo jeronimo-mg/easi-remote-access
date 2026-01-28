@@ -16,6 +16,21 @@ User-friendly remote desktop for Windows 11.
 * **noVNC** (via Websockify).
 * **Cloudflare Tunnel**.
 
+## 🛡️ Black Screen Guard (Auto-Recovery)
+
+This version includes an intelligent **Black Screen Guard**:
+
+1. When you connect, a popup appears on the server screen ("I CAN SEE THE SCREEN!").
+2. If nobody clicks it within **10 seconds** (because the screen is black for you), the computer will **automatically force-reboot**.
+3. This clears the video driver state and restores access.
+
+## 🚀 Auto-Start (Persistence)
+
+To make the remote desktop start automatically when Windows boots (essential for the Auto-Recovery to work):
+
+1. Open PowerShell in the `windows/` folder.
+2. Run: `powershell -ExecutionPolicy Bypass -File install_autostart.ps1`
+
 ## 🔧 Troubleshooting
 
 ### 1. Black Screen (Mouse moves but screen is dark)
