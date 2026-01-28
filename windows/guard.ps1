@@ -31,8 +31,11 @@ $Button.Font = New-Object System.Drawing.Font("Arial", 10, [System.Drawing.FontS
 $Form.Controls.Add($Button)
 
 $Timer = New-Object System.Windows.Forms.Timer
-$Timer.Interval = 1000 # 1 second
-$SecondsLeft = 10
+# Configuration
+$TimeoutSeconds = 60
+$TimerInterval = 1000 # 1 second
+$Timer.Interval = $TimerInterval
+$SecondsLeft = $TimeoutSeconds
 
 $Timer.Add_Tick({
         $script:SecondsLeft--

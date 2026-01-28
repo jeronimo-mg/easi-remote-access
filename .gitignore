@@ -28,3 +28,5 @@ tunnel_token.txt
 notify_url.ps1
 
 enable_autologon.ps1
+
+guard_monitor.ps1
