@@ -23,8 +23,12 @@ $NoVncWebDir = Join-Path $LibDir "noVNC"
 # 0. Cleanup previous sessions
 Write-Host "Cleaning up..."
 Stop-Process -Name "cloudflared" -ErrorAction SilentlyContinue
-Get-Process python -ErrorAction SilentlyContinue | Where-Object { $_.CommandLine -like "*websockify*" } | Stop-Process -ErrorAction SilentlyContinue
+# Kill any process (python or cmd) that has "websockify" in the command line
+Get-CimInstance Win32_Process | Where-Object { $_.CommandLine -like "*websockify*" } | ForEach-Object { 
+    Stop-Process -Id $_.ProcessId -ErrorAction SilentlyContinue 
+}
 Start-Sleep -Seconds 1
+
 
 
 
