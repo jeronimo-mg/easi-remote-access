@@ -45,7 +45,9 @@ if (Test-Path $WebsockifyLog) { Remove-Item $WebsockifyLog }
 
 Write-Host "Starting Proxy..."
 # Start websockify with redirection to log file so we can monitor connections
-$PythonArgs = "/c python -m websockify --web `"$NoVncWebDir`" 6080 127.0.0.1:5900 > `"$WebsockifyLog`" 2>&1"
+# -u = unbuffered binary stdout and stderr (so logs appear immediately)
+# --verbose = show connection info
+$PythonArgs = "/c python -u -m websockify --verbose --web `"$NoVncWebDir`" 6080 127.0.0.1:5900 > `"$WebsockifyLog`" 2>&1"
 $WebsockifyProcess = Start-Process -FilePath "cmd" -ArgumentList $PythonArgs -PassThru -WindowStyle Hidden
 Start-Sleep -Seconds 3
 
@@ -80,30 +82,28 @@ if ($FoundUrl) {
     Write-Host ""
     Write-Host "SUCCESS: $FoundUrl/vnc.html" -ForegroundColor Green
     Write-Host ""
-    Write-Host "Monitoring connections... (Press Ctrl+C to stop)"
+    Write-Host "Monitoring TCP connections on port 5900... (Press Ctrl+C to stop)"
     
     # Monitoring Loop
-    $CurrentLine = 0
     try {
         while ($true) {
             Start-Sleep -Seconds 1
             
-            if (Test-Path $WebsockifyLog) {
-                $Logs = Get-Content $WebsockifyLog -Tail 5
-                
-                # Check for new connection patterns from websockify output
-                # Pattern often: " 1: 127.0.0.1: Plain non-SSL (ws://) WebSocket connection"
-                foreach ($line in $Logs) {
-                    if ($line -match "WebSocket connection" -and $line -notmatch "closed") {
-                        # Trigger Guard if not already running
-                        $GuardProcess = Get-Process -Name "powershell" -ErrorAction SilentlyContinue | Where-Object { $_.CommandLine -like "*guard.ps1*" }
-                        if (-not $GuardProcess) {
-                            Write-Host "New client connected! Triggering Black Screen Guard..." -ForegroundColor Cyan
-                            Start-Process -FilePath "powershell" -ArgumentList "-ExecutionPolicy Bypass -File `"$BaseDir\guard.ps1`"" -WindowStyle Normal
-                            # Sleep to accept the connection fully
-                            Start-Sleep -Seconds 5
-                        }
-                    }
+            # Check for ESTABLISHED connections to VNC Server (Port 5900)
+            # When a web client connects, websockify connects to port 5900.
+            $VncConnections = Get-NetTCPConnection -LocalPort 5900 -State Established -ErrorAction SilentlyContinue
+            
+            if ($VncConnections) {
+                # Trigger Guard if not already running
+                $GuardProcess = Get-Process -Name "powershell" -ErrorAction SilentlyContinue | Where-Object { $_.CommandLine -like "*guard.ps1*" }
+                if (-not $GuardProcess) {
+                    Write-Host "New VNC connection detected! Triggering Black Screen Guard..." -ForegroundColor Cyan
+                    Start-Process -FilePath "powershell" -ArgumentList "-ExecutionPolicy Bypass -File `"$BaseDir\guard.ps1`"" -WindowStyle Normal
+                    
+                    # Wait considerably to avoid spamming the guard if the user cancels properly
+                    # or if the connection persists.
+                    # We only want to trigger ONCE per 'session' ideally, or just debounce it.
+                    Start-Sleep -Seconds 10
                 }
             }
         }
@@ -120,4 +120,5 @@ else {
 Stop-Process -Id $WebsockifyProcess.Id -ErrorAction SilentlyContinue
 Stop-Process -Id $TunnelProcess.Id -ErrorAction SilentlyContinue
 Write-Host "Stopped"
+
 
