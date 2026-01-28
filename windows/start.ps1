@@ -85,25 +85,31 @@ if ($FoundUrl) {
     Write-Host "Monitoring TCP connections on port 5900... (Press Ctrl+C to stop)"
     
     # Monitoring Loop
+    $GuardTriggered = $false
     try {
         while ($true) {
             Start-Sleep -Seconds 1
             
             # Check for ESTABLISHED connections to VNC Server (Port 5900)
-            # When a web client connects, websockify connects to port 5900.
             $VncConnections = Get-NetTCPConnection -LocalPort 5900 -State Established -ErrorAction SilentlyContinue
             
             if ($VncConnections) {
-                # Trigger Guard if not already running
-                $GuardProcess = Get-Process -Name "powershell" -ErrorAction SilentlyContinue | Where-Object { $_.CommandLine -like "*guard.ps1*" }
-                if (-not $GuardProcess) {
-                    Write-Host "New VNC connection detected! Triggering Black Screen Guard..." -ForegroundColor Cyan
-                    Start-Process -FilePath "powershell" -ArgumentList "-ExecutionPolicy Bypass -File `"$BaseDir\guard.ps1`"" -WindowStyle Normal
+                if (-not $GuardTriggered) {
+                    # Trigger Guard
+                    $GuardProcess = Get-Process -Name "powershell" -ErrorAction SilentlyContinue | Where-Object { $_.CommandLine -like "*guard.ps1*" }
                     
-                    # Wait considerably to avoid spamming the guard if the user cancels properly
-                    # or if the connection persists.
-                    # We only want to trigger ONCE per 'session' ideally, or just debounce it.
-                    Start-Sleep -Seconds 10
+                    if (-not $GuardProcess) {
+                        Write-Host "New VNC connection detected! Triggering Black Screen Guard..." -ForegroundColor Cyan
+                        Start-Process -FilePath "powershell" -ArgumentList "-ExecutionPolicy Bypass -File `"$BaseDir\guard.ps1`"" -WindowStyle Normal
+                        $GuardTriggered = $true
+                    }
+                }
+            }
+            else {
+                # Connection dropped, reset flag so next connection gets checked
+                if ($GuardTriggered) {
+                    Write-Host "Connection closed. Resetting Guard." -ForegroundColor Gray
+                    $GuardTriggered = $false
                 }
             }
         }
