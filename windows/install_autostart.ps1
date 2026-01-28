@@ -3,7 +3,7 @@ $StartupDir = $WScriptShell.SpecialFolders.Item("Startup")
 $ShortcutPath = Join-Path $StartupDir "ClickTop-Remote.lnk"
 
 # Params
-$BaseDir = Get-Location
+$BaseDir = (Get-Location).Path
 $BatFile = Join-Path $BaseDir "CLICK_TO_START.bat"
 
 if ($args[0] -eq "uninstall") {
