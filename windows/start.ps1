@@ -111,40 +111,18 @@ if ($FoundUrl) {
         Start-Process -FilePath "powershell" -ArgumentList "-ExecutionPolicy Bypass -File `"$NotifyScript`" -Url `"$FoundUrl`"" -WindowStyle Hidden
     }
 
-    Write-Host "Monitoring TCP connections on port 5900... (Press Ctrl+C to stop)"
+    Write-Host "Service Running. Monitoring port 5900 (Keep-Alive)..."
     
-    # Monitoring Loop
-    $GuardTriggered = $false
+    # Service Loop
+    # We don't need to trigger GUI here anymore (handled by guard_monitor.ps1 in user session)
     try {
         while ($true) {
-            Start-Sleep -Seconds 1
-            
-            # Check for ESTABLISHED connections to VNC Server (Port 5900)
-            $VncConnections = Get-NetTCPConnection -LocalPort 5900 -State Established -ErrorAction SilentlyContinue
-            
-            if ($VncConnections) {
-                if (-not $GuardTriggered) {
-                    # Trigger Guard
-                    $GuardProcess = Get-Process -Name "powershell" -ErrorAction SilentlyContinue | Where-Object { $_.CommandLine -like "*guard.ps1*" }
-                    
-                    if (-not $GuardProcess) {
-                        Write-Host "New VNC connection detected! Triggering Black Screen Guard..." -ForegroundColor Cyan
-                        Start-Process -FilePath "powershell" -ArgumentList "-ExecutionPolicy Bypass -File `"$BaseDir\guard.ps1`"" -WindowStyle Normal
-                        $GuardTriggered = $true
-                    }
-                }
-            }
-            else {
-                # Connection dropped, reset flag so next connection gets checked
-                if ($GuardTriggered) {
-                    Write-Host "Connection closed. Resetting Guard." -ForegroundColor Gray
-                    $GuardTriggered = $false
-                }
-            }
+            Start-Sleep -Seconds 5
+            # Just keep the script alive.
         }
     }
     catch {
-        # Ctrl+C or forcing close
+        # Ctrl+C
     }
 }
 else {
