@@ -30,3 +30,6 @@ notify_url.ps1
 enable_autologon.ps1
 
 guard_monitor.ps1
+
+setup_lite.sh
+start_lite.sh

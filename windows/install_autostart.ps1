@@ -2,6 +2,13 @@ $WScriptShell = New-Object -ComObject WScript.Shell
 $StartupDir = $WScriptShell.SpecialFolders.Item("Startup")
 $ShortcutPath = Join-Path $StartupDir "ClickTop-Remote.lnk"
 
+# Check for Administrator Privileges
+if (-not ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] "Administrator")) {
+    Write-Host "ERROR: This script must be run as Administrator!" -ForegroundColor Red
+    Write-Host "Please right-click PowerShell and select 'Run as Administrator'."
+    exit 1
+}
+
 # Params
 $BaseDir = (Get-Location).Path
 $PsScript = Join-Path $BaseDir "start.ps1"
@@ -26,8 +33,13 @@ else {
     $TriggerService = New-ScheduledTaskTrigger -AtStartup
     $Settings = New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -ExecutionTimeLimit 0
     
-    Register-ScheduledTask -Action $ActionService -Trigger $TriggerService -Settings $Settings -TaskName $ServiceTaskName -User "System" -RunLevel Highest -Force
-    Write-Host "Installed Service Task (System/Boot): $ServiceTaskName" -ForegroundColor Green
+    try {
+        Register-ScheduledTask -Action $ActionService -Trigger $TriggerService -Settings $Settings -TaskName $ServiceTaskName -User "System" -RunLevel Highest -Force -ErrorAction Stop
+        Write-Host "Installed Service Task (System/Boot): $ServiceTaskName" -ForegroundColor Green
+    }
+    catch {
+        Write-Host "FAILED to register Service Task: $_" -ForegroundColor Red
+    }
     
     # --- 2. GUARD TASK (User, At Logon) ---
     # Runs a dedicated monitor script that only cares about the popup
@@ -35,8 +47,17 @@ else {
     $ActionGuard = New-ScheduledTaskAction -Execute "powershell.exe" -Argument "-ExecutionPolicy Bypass -WindowStyle Hidden -File `"$GuardScript`"" -WorkingDirectory $BaseDir
     $TriggerGuard = New-ScheduledTaskTrigger -AtLogOn
     
-    # Run as Interactive User
-    $Principal = New-ScheduledTaskPrincipal -UserId (measure-object -inputobject "" | select -expandproperty SID).ToString() -LogonType Interactive
-    Register-ScheduledTask -Action $ActionGuard -Trigger $TriggerGuard -Settings $Settings -TaskName $GuardTaskName -Principal $Principal -Force
-    Write-Host "Installed Guard Task (User/Logon): $GuardTaskName" -ForegroundColor Green
+    # Re-register as Interactive User (so Popup works)
+    try {
+        $CurrentSid = [System.Security.Principal.WindowsIdentity]::GetCurrent().User.Value
+        $Principal = New-ScheduledTaskPrincipal -UserId $CurrentSid -LogonType Interactive -RunLevel Highest
+        Register-ScheduledTask -Action $ActionGuard -Trigger $TriggerGuard -Settings $Settings -TaskName $GuardTaskName -Principal $Principal -Force -ErrorAction Stop
+        Write-Host "Installed Guard Task (User/Logon): $GuardTaskName" -ForegroundColor Green
+    }
+    catch {
+        Write-Host "FAILED to register Guard Task: $_" -ForegroundColor Red
+    }
 }
+
+Write-Host "Done. Press any key to exit..."
+$null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")

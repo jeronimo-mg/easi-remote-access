@@ -1,6 +1,22 @@
 $ErrorActionPreference = "Stop"
 
-$BaseDir = Get-Location
+# DEBUG LOGGING (To find out why it fails at boot)
+$DebugLog = "$env:TEMP\ClickTop_Debug.log"
+function Log-Debug {
+    param($Msg)
+    $Time = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
+    Add-Content -Path $DebugLog -Value "[$Time] $Msg" -ErrorAction SilentlyContinue
+}
+
+Log-Debug "Script Started. Waiting 30s for Network..."
+Start-Sleep -Seconds 30
+Log-Debug "Resuming after sleep."
+
+$BaseDir = $PSScriptRoot
+if (-not $BaseDir) { $BaseDir = Get-Location } # Fallback for older PowerShell versions
+Log-Debug "BaseDir resolved to: $BaseDir"
+
+# Try current dir first, then parent dir (for shared bin/lib)
 
 # Try current dir first, then parent dir (for shared bin/lib)
 if (Test-Path (Join-Path $BaseDir "bin")) {
