@@ -1,22 +1,7 @@
 $ErrorActionPreference = "Stop"
 
-# DEBUG LOGGING (To find out why it fails at boot)
-$DebugLog = "$env:TEMP\ClickTop_Debug.log"
-function Log-Debug {
-    param($Msg)
-    $Time = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
-    Add-Content -Path $DebugLog -Value "[$Time] $Msg" -ErrorAction SilentlyContinue
-}
-
-Log-Debug "Script Started. Waiting 30s for Network..."
-Start-Sleep -Seconds 30
-Log-Debug "Resuming after sleep."
-
 $BaseDir = $PSScriptRoot
-if (-not $BaseDir) { $BaseDir = Get-Location } # Fallback for older PowerShell versions
-Log-Debug "BaseDir resolved to: $BaseDir"
-
-# Try current dir first, then parent dir (for shared bin/lib)
+if (-not $BaseDir) { $BaseDir = Get-Location }
 
 # Try current dir first, then parent dir (for shared bin/lib)
 if (Test-Path (Join-Path $BaseDir "bin")) {
@@ -26,7 +11,7 @@ elseif (Test-Path (Join-Path (Join-Path $BaseDir "..") "bin")) {
     $Root = Join-Path $BaseDir ".."
 }
 else {
-    $Root = $BaseDir # Fallback, likely will fail but let setup_tools handle it or error later
+    $Root = $BaseDir
 }
 
 $BinDir = Join-Path $Root "bin"
@@ -36,17 +21,13 @@ $CloudflaredPath = Join-Path $BinDir "cloudflared.exe"
 $LogFile = Join-Path $BaseDir "tunnel.log"
 $NoVncWebDir = Join-Path $LibDir "noVNC"
 
-# 0. Cleanup previous sessions
+# Cleanup
 Write-Host "Cleaning up..."
 Stop-Process -Name "cloudflared" -ErrorAction SilentlyContinue
-# Kill any process (python or cmd) that has "websockify" in the command line
 Get-CimInstance Win32_Process | Where-Object { $_.CommandLine -like "*websockify*" } | ForEach-Object { 
     Stop-Process -Id $_.ProcessId -ErrorAction SilentlyContinue 
 }
 Start-Sleep -Seconds 1
-
-
-
 
 Write-Host "Checking VNC..."
 $VncTest = Test-NetConnection -ComputerName 127.0.0.1 -Port 5900 -WarningAction SilentlyContinue
@@ -60,86 +41,47 @@ $WebsockifyLog = Join-Path $BaseDir "websockify.log"
 if (Test-Path $WebsockifyLog) { Remove-Item $WebsockifyLog }
 
 Write-Host "Starting Proxy..."
-# Start websockify with redirection to log file so we can monitor connections
-# -u = unbuffered binary stdout and stderr (so logs appear immediately)
-# --verbose = show connection info
 $PythonArgs = "/c python -u -m websockify --verbose --web `"$NoVncWebDir`" 6080 127.0.0.1:5900 > `"$WebsockifyLog`" 2>&1"
 $WebsockifyProcess = Start-Process -FilePath "cmd" -ArgumentList $PythonArgs -PassThru -WindowStyle Hidden
 Start-Sleep -Seconds 3
 
-# Verify Port 6080
 $ProxyTest = Test-NetConnection -ComputerName 127.0.0.1 -Port 6080 -WarningAction SilentlyContinue
 if (-not $ProxyTest.TcpTestSucceeded) {
-    Write-Error "Websockify failed to start on port 6080. Check $WebsockifyLog."
+    Write-Error "Websockify failed to start. Check $WebsockifyLog."
     Stop-Process -Id $WebsockifyProcess.Id -ErrorAction SilentlyContinue
     exit 1
 }
-Write-Host "Proxy OK on port 6080."
+Write-Host "Proxy OK."
 
 Write-Host "Starting Tunnel..."
 if (Test-Path $LogFile) { Remove-Item $LogFile }
 
-$TokenFile = Join-Path $BaseDir "tunnel_token.txt"
+$TunnelArgs = "tunnel --url http://127.0.0.1:6080 --logfile `"$LogFile`""
+$TunnelProcess = Start-Process -FilePath $CloudflaredPath -ArgumentList $TunnelArgs -PassThru -WindowStyle Hidden
 
-if (Test-Path $TokenFile) {
-    $Token = Get-Content $TokenFile -Raw
-    $Token = $Token.Trim()
-    Write-Host "Using Fixed Tunnel (Token found)" -ForegroundColor Cyan
-    # Run named tunnel with token
-    $TunnelArgs = "tunnel run --token $Token"
-    $TunnelProcess = Start-Process -FilePath $CloudflaredPath -ArgumentList $TunnelArgs -PassThru -WindowStyle Hidden
-    
-    # We don't need to grep the log for URL, because the user already knows it (they configured it in Cloudflare)
-    # But we set FoundUrl to a placeholder so the script continues
-    $FoundUrl = "Fixed DNS configured in Cloudflare" 
-}
-else {
-    Write-Host "Using Temporary Tunnel (Random URL)" -ForegroundColor Gray
-    $TunnelArgs = "tunnel --url http://127.0.0.1:6080 --logfile `"$LogFile`""
-    $TunnelProcess = Start-Process -FilePath $CloudflaredPath -ArgumentList $TunnelArgs -PassThru -WindowStyle Hidden
-}
-
-if (-not (Test-Path $TokenFile)) {
-    Write-Host "Waiting for URL..."
-    $FoundUrl = $null
-    for ($i = 1; $i -le 20; $i++) {
-        Start-Sleep -Seconds 2
-        if (Test-Path $LogFile) {
-            $LogContent = Get-Content $LogFile -Raw
-            if ($LogContent -match "https://[a-zA-Z0-9-]+\.trycloudflare\.com") {
-                $FoundUrl = $matches[0]
-                break
-            }
+Write-Host "Waiting for URL..."
+$FoundUrl = $null
+for ($i = 1; $i -le 20; $i++) {
+    Start-Sleep -Seconds 2
+    if (Test-Path $LogFile) {
+        $LogContent = Get-Content $LogFile -Raw
+        if ($LogContent -match "https://[a-zA-Z0-9-]+\.trycloudflare\.com") {
+            $FoundUrl = $matches[0]
+            break
         }
     }
 }
-
 
 if ($FoundUrl) {
     Write-Host ""
     Write-Host "SUCCESS: $FoundUrl/vnc.html" -ForegroundColor Green
     Write-Host ""
+    Write-Host "Press Ctrl+C to stop."
     
-    # Send Notification if configured
-    $NotifyScript = Join-Path $BaseDir "notify_url.ps1"
-    if (Test-Path $NotifyScript) {
-        Write-Host "Sending notification..."
-        Start-Process -FilePath "powershell" -ArgumentList "-ExecutionPolicy Bypass -File `"$NotifyScript`" -Url `"$FoundUrl`"" -WindowStyle Hidden
-    }
-
-    Write-Host "Service Running. Monitoring port 5900 (Keep-Alive)..."
-    
-    # Service Loop
-    # We don't need to trigger GUI here anymore (handled by guard_monitor.ps1 in user session)
     try {
-        while ($true) {
-            Start-Sleep -Seconds 5
-            # Just keep the script alive.
-        }
+        while ($true) { Start-Sleep -Seconds 1 }
     }
-    catch {
-        # Ctrl+C
-    }
+    catch {}
 }
 else {
     Write-Host "FAILED. Check log:"
@@ -149,5 +91,3 @@ else {
 Stop-Process -Id $WebsockifyProcess.Id -ErrorAction SilentlyContinue
 Stop-Process -Id $TunnelProcess.Id -ErrorAction SilentlyContinue
 Write-Host "Stopped"
-
-
