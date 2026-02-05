@@ -27,6 +27,19 @@ It combines **x11vnc** (display capturing), **noVNC** (web client), and **Cloudf
     ```
 4.  **Access**: The script will print a unique `https://...` URL. Open it, enter the generated password, and enjoy!
 
+## 🚀 Lite Mode (Terminal Only)
+For a resource-efficient experience (low RAM/CPU usage), use the **Lite Mode**. It opens a terminal in your browser via Xpra.
+
+1.  **Setup Lite dependencies**:
+    ```console
+    bash setup_lite.sh
+    ```
+2.  **Start Lite Mode**:
+    ```console
+    bash start_lite.sh
+    ```
+3.  **Usage**: Open the URL to access the terminal. To run a GUI app (like firefox), just type `firefox &` in the browser terminal!
+
 ## 🛑 How to Stop
 Press `Ctrl+C` in the terminal or run:
 ```console

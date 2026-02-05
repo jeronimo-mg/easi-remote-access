@@ -1,0 +1,15 @@
+[Unit]
+Description=ClickTop Lite Remote Desktop (Xpra + Cloudflare)
+After=network.target network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=eliz
+WorkingDirectory=/home/eliz/Documentos/remote-desktop/linux/ubuntu-debian(apt)
+ExecStart=/bin/bash /home/eliz/Documentos/remote-desktop/linux/ubuntu-debian(apt)/start_lite.sh
+Restart=on-failure
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target
