@@ -61,4 +61,29 @@ To make the remote desktop start automatically when Windows boots (essential for
 * **Solution**:
   * Open Task Manager and kill `tvnserver.exe`.
   * Or run in terminal: `taskkill /F /IM tvnserver.exe`
+  * Open Task Manager and kill `tvnserver.exe`.
+  * Or run in terminal: `taskkill /F /IM tvnserver.exe`
   * Then start TightVNC again from the Start Menu.
+
+## 🍃 Lite Mode (CLI First)
+
+To save resources and have a "Black Screen Proof" access, use the Lite Mode (Web Terminal):
+
+### First Time Setup
+
+1. Open PowerShell in `windows/` folder.
+2. Run: `.\setup_lite.ps1` (Downloads `ttyd`).
+
+### Starting Lite Mode
+
+1. Run: `.\start_lite.ps1`
+2. Open the URL. You will see a PowerShell terminal in your browser.
+
+### Opening the GUI (On Demand)
+
+If you need to see the screen:
+
+1. Inside the Web Terminal, type: `.\Start-Gui.ps1`
+2. Wait for the **New Link** to appear.
+3. Open the new link in a tab.
+4. When done, close the tab and type `.\Stop-Gui.ps1` in the terminal.

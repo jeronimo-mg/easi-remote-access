@@ -33,3 +33,8 @@ guard_monitor.ps1
 
 
 linux/ubuntu-debian(apt)/send_email.py
+
+ttyd.exe
+tunnel_lite.log
+tunnel_gui.log
+websockify_gui.log
