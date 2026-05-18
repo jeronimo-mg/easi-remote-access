@@ -10,6 +10,8 @@ Desktop.ini
 linux/bin/
 linux/lib/
 linux/vnc.pass
+linux/ubuntu-debian(apt)/vnc.pass
+linux/ubuntu-debian(apt)/xpra.pass
 linux/*.log
 
 # Windows Module

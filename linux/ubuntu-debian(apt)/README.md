@@ -38,7 +38,7 @@ For a resource-efficient experience (low RAM/CPU usage), use the **Lite Mode**. 
     ```console
     bash start_lite.sh
     ```
-3.  **Usage**: Open the URL to access the terminal. To run a GUI app (like firefox), just type `firefox &` in the browser terminal!
+3.  **Usage**: Open the URL, enter the access password defined in step 2, and access the terminal! To run a GUI app (like firefox), just type `firefox &` in the browser terminal!
 
 ## 🛑 How to Stop
 Press `Ctrl+C` in the terminal or run:

@@ -6,11 +6,51 @@
 # Configuration
 XPRA_PORT=10000
 TUNNEL_LOG="tunnel_lite.log"
+PASS_FILE="$(pwd)/xpra.pass"
 
 # Check if Xpra is installed
 if ! command -v xpra &> /dev/null; then
     echo "Xpra not found. Please run ./setup_lite.sh first."
     exit 1
+fi
+
+echo "------------------------------------------------------------------"
+echo "              ClickTop-Lite Remote Desktop Setup"
+echo "------------------------------------------------------------------"
+
+# Password Logic
+if [ -f "$PASS_FILE" ]; then
+    echo "🔑 Existing password file found."
+    read -p "Do you want to define a NEW password for Lite mode? (y/N): " -n 1 -r
+    echo
+    if [[ $REPLY =~ ^[Yy]$ ]]; then
+        rm "$PASS_FILE"
+    fi
+fi
+
+if [ ! -f "$PASS_FILE" ]; then
+    echo "creating new password for Lite mode..."
+    while true; do
+        read -s -p "Enter Access Password: " PASS
+        echo
+        if [ -z "$PASS" ]; then
+             echo "Password cannot be empty."
+             continue
+        fi
+        
+        read -s -p "Confirm Password: " PASS_CONFIRM
+        echo
+        
+        if [ "$PASS" == "$PASS_CONFIRM" ]; then
+            break
+        else
+            echo "❌ Passwords do not match. Try again."
+        fi
+    done
+    
+    echo -n "$PASS" > "$PASS_FILE"
+    chmod 600 "$PASS_FILE"
+    echo "✅ Password saved."
 fi
 
 echo "Cleaning up previous sessions..."
@@ -20,7 +60,7 @@ pkill -f "cloudflared.*$XPRA_PORT"
 echo "Starting Xpra Server (Display :100)..."
 # Start Xpra with HTML5 enabled, binding to localhost
 # start-child=xterm ensures we have a terminal immediately
-xpra start :100 --bind-tcp=127.0.0.1:$XPRA_PORT --html=on --start-child=xterm --daemon=yes --exit-with-children=yes
+xpra start :100 --bind-tcp=127.0.0.1:$XPRA_PORT --html=on --start-child=xterm --daemon=yes --exit-with-children=yes --tcp-auth=password:value=$(cat $PASS_FILE)
 
 echo "Xpra started on port $XPRA_PORT."
 
